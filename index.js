@@ -3,8 +3,11 @@ const express    = require('express');
 const bodyParser = require('body-parser');
 const twilio     = require('twilio');
 const ngrok      = require('ngrok');
+const cors = require('cors');
 
 const app = new express();
+  // Enable Cross Origin Resource Sharing to all origins by default
+  app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 

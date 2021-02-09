@@ -66,11 +66,20 @@ class ConversationsApp extends React.Component {
     this.conversationsClient.shutdown();
   };
 
-  getToken = () => {
+  getToken = async (name) => {
+    console.log(this.state.name);
+    const res = await fetch(
+      `http://localhost:3001/token/${this.state.name}`,
+      {
+        method: "POST",
+      }
+    );
+    const response = await res.json();
+    if(res.ok){
     // Paste your unique Chat token function
-    const myToken =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzRmMjQxZDZiNzcwNGIzMGJmOGU4Nzg1YjI0Y2EyYWEzLTE2MTI4ODA5MTAiLCJncmFudHMiOnsiaWRlbnRpdHkiOiJ1c2VyQGV4YW1wbGUuY29tIiwiY2hhdCI6eyJzZXJ2aWNlX3NpZCI6IklTNjc1NzZmNThkMWU2NDAxNWJmZWY1NGE2ZTA3OWZjZDUifX0sImlhdCI6MTYxMjg4MDkxMCwiZXhwIjoxNjEyODg0NTEwLCJpc3MiOiJTSzRmMjQxZDZiNzcwNGIzMGJmOGU4Nzg1YjI0Y2EyYWEzIiwic3ViIjoiQUNjYTRhNDg1ZTQ0NTc2MGVkMDUyYTA5OGZmMmQ3MWQwZSJ9.0XW2TzyTHcesJ8HDSucguOX8Q3nZozidV5j9uU24BBc";
+    const myToken = response.token;
     this.setState({ token: myToken }, this.initConversations);
+    }
   };
 
   initConversations = async () => {
