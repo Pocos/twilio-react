@@ -1,13 +1,13 @@
-const config     = require('./config');
-const express    = require('express');
+const config = require('./config');
+const express = require('express');
 const bodyParser = require('body-parser');
-const twilio     = require('twilio');
-const ngrok      = require('ngrok');
+const twilio = require('twilio');
+const ngrok = require('ngrok');
 const cors = require('cors');
 
 const app = new express();
-  // Enable Cross Origin Resource Sharing to all origins by default
-  app.use(cors());
+// Enable Cross Origin Resource Sharing to all origins by default
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 
@@ -38,15 +38,15 @@ app.listen(config.port, () => {
 // ============================================
 let client = new twilio(config.twilio.accountSid, config.twilio.authToken);
 
-app.post('/chat', (req, res) => {
+app.post('/inboundMessage', (req, res) => {
   console.log("Received a webhook:", req.body);
   if (req.body.EventType === 'onConversationAdded') {
     const me = "Tackleton";
     client.conversations.v1.conversations(req.body.ConversationSid)
       .participants
       .create({
-          identity: me
-        })
+        identity: me
+      })
       .then(participant => console.log(`Added ${participant.identity} to ${req.body.ConversationSid}.`))
       .catch(err => console.error(`Failed to add a member to ${req.body.ConversationSid}!`, err));
   }
@@ -55,8 +55,8 @@ app.post('/chat', (req, res) => {
   res.sendStatus(200);
 });
 
-app.post('/outbound-status', (req, res) => {
-  console.log(`Message ${req.body.SmsSid} to ${req.body.To} is ${req.body.MessageStatus}`);
+app.post('/outboundMessage', (req, res) => {
+  console.log(req.body);
   res.sendStatus(200);
 })
 
@@ -71,6 +71,30 @@ if (config.ngrokSubdomain) {
   ngrokOptions.subdomain = config.ngrokSubdomain
 }
 
-ngrok.connect(ngrokOptions).then(url => {
+(async () => {
+const ngrokUrl = await ngrok.connect(ngrokOptions);
+console.log(ngrokUrl);
+const res = await client.conversations.configuration
+  .webhooks()
+  .update({
+     postWebhookUrl: `${ngrokUrl}/outboundMessage`,
+     preWebhookUrl: `${ngrokUrl}/inboundMessage`,
+     method: 'POST',
+     filters: ['onMessageAdd', 'onMessageAdded']
+   });
+console.log(res);
+})();
+
+// Set up ngrok and update twilio webhooks
+/*ngrok.connect(ngrokOptions).then(url => {
   console.log('ngrok url is ' + url);
-}).catch(console.error);
+  client.conversations.configuration
+  .webhooks()
+  .update({
+     postWebhookUrl: `${url}/inboundMessage`,
+     preWebhookUrl: `${url}/outboundMessage`,
+     method: 'POST',
+     filters: ['onMessageSend', 'onMessageSent']
+   }).then(webhook => console.log(webhook.method));
+  // Update twilio webhooks
+}).catch(console.error);*/
